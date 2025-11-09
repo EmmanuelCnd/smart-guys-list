@@ -1,10 +1,14 @@
 $primary: #44001A;
+$secondary: #b15b5b;
+
 
 @import "bootstrap/scss/bootstrap";
 @import url('https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap');
 
 body {
 	font-size: 18px;
+	font-family: 'Lato', sans-serif;
 }
 
 .topbar {
@@ -81,7 +85,7 @@ body {
 		.nav {
 			display: block;
 			position: absolute;
-			top: 100%;
+			top: 90%;
 			left: 0;
 			right: 0;
 			background-color: $primary;
@@ -114,5 +118,52 @@ body {
 				pointer-events: auto;
 			}
 		}
+	}
+}
+.container {
+	margin-top: 1.5em;
+	h1{
+		text-decoration: none;
+		font-weight: 400;
+	}
+	.users-icon {
+		font-size: 1.7rem;
+		margin-right: 0.5em;
+	}
+	.table{
+		--bs-table-bg: $secondary;
+		--bs-table-color: $white;
+		font-size: 10px;
+		&.table-user {
+			td {
+				&.action {
+					i {
+						cursor: pointer;
+						margin-left: 0.5em;
+						color: $primary;
+					}
+				}
+			}
+			thead {
+				.user_id {
+					width: 5%;
+				}
+				.photo {
+					width: 5%;
+				}
+				.first_name {
+					width: 20%;
+				}
+				.last_name {
+					width: 20%;
+				}
+				.email {
+					width: 40%;
+				}
+				.action {
+					width: 10%;
+				}
+			}
+		}	
 	}
 }

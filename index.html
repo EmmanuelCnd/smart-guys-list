@@ -21,6 +21,67 @@
             </nav>                
         </div>
     </header>
+    <div class="container">
+        <div class="title-group d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex align-items-center">
+                <i class="fa-solid fa-user-group users-icon me-2"></i>
+                <h1 class="mb-0">List of smart guys</h1>
+            </div>
+            <button class="btn btn-primary btn-sm">
+                <i class="fa-solid fa-plus me-1"></i> Add brainiac
+            </button>
+        </div>
+        <div class="table-responsive-md">
+            <table class="table table-user table-striped align-middle mb-0">
+                <thead>
+                    <tr class="text-bg-secondary">
+                        <th class="user_id">Id</th>
+                        <th class="photo"></th><!-- For photo -->
+                        <th class="first_name">First name</th>
+                        <th class="last_name">Last name</th>
+                        <th class="email">E-mail</th>
+                        <th class="action"></th><!-- For buttons -->
+                    </tr>
+                </thead>
+                <tbody">
+                    <!-- Rows will be dynamically added here -->
+                     <tr>
+                        <td>1</td>
+                        <td class="text-center"><img src="https://picsum.photos/seed/picsum/30/30" alt="User Photo" class="user-photo"></td>
+                        <td>Grzegorz</td>
+                        <td>Brzęszczyszczykiewicz</td>
+                        <td>test.test@test.test</td>
+                        <td class="action text-end"><i class="fa-solid fa-pen-to-square"></i><i class="fa-solid fa-trash"></i></td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td class="text-center"><img src="https://picsum.photos/30/30?grayscale" alt="User Photo" class="user-photo"></td>
+                        <td>Grzegorz</td>
+                        <td>Brzęszczyszczykiewicz</td>
+                        <td>test.test@test.test</td>
+                        <td class="action text-end"><i class="fa-solid fa-pen-to-square"></i><i class="fa-solid fa-trash"></i></td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td class="text-center"><img src="https://picsum.photos/seed/picsum/30/30" alt="User Photo" class="user-photo"></td>
+                        <td>Grzegorz</td>
+                        <td>Brzęszczyszczykiewicz</td>
+                        <td>test.test@test.test</td>
+                        <td class="action text-end"><i class="fa-solid fa-pen-to-square"></i><i class="fa-solid fa-trash"></i></td>
+                    </tr>
+                    <tr>
+                        <td>4</td>
+                        <td class="text-center"><img src="https://picsum.photos/seed/picsum/30/30" alt="User Photo" class="user-photo"></td>
+                        <td>Grzegorz</td>
+                        <td>Brzęszczyszczykiewicz</td>
+                        <td>test.test@test.test</td>
+                        <td class="action text-end"><i class="fa-solid fa-pen-to-square"></i><i class="fa-solid fa-trash"></i></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <script type="module" src="/src/main.js"></script>
 </body>
 </html>
