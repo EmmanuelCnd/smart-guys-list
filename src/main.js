@@ -10,6 +10,11 @@ class Brainiac {
     this.first_name = first_name;
     this.last_name = last_name;
     this.email = email;
+    this.deleted = false;
+  }
+
+  delete() {
+    this.deleted = true;
   }
 
   getRowHTML() {
@@ -34,9 +39,20 @@ class Brainiac {
     const btnEdit = document.createElement('button');
     btnEdit.classList.add('btn', 'btn-sm', 'text-primary');
     btnEdit.innerHTML = '<i class="fa-solid fa-pen-to-square"></i>';
+    btnEdit.dataset.id = this.id;
+
     const btnDelete = document.createElement('button');
     btnDelete.classList.add('btn', 'btn-sm', 'text-primary');
     btnDelete.innerHTML = '<i class="fa-solid fa-trash"></i>';
+    btnDelete.addEventListener('click', async (e) => {
+      const modalDel = document.getElementById('deleteBrainiacModal');
+      if (!modalDel) return;
+      modalDel.dataset.user_id = this.id;
+      const modal = bootstrap.Modal.getOrCreateInstance(modalDel);
+      document.getElementById('delete-message').textContent = `Are you sure you want to delete brainiac: ${this.first_name} ${this.last_name}?`;
+      modal.show();
+    });
+
     tdAction.appendChild(btnEdit);
     tdAction.appendChild(btnDelete);
     row.appendChild(tdId);
@@ -45,7 +61,7 @@ class Brainiac {
     row.appendChild(tdLastName);
     row.appendChild(tdEmail);
     row.appendChild(tdAction);
-      return row;
+    return row;
   }
 }
 const brainiacList = [];
@@ -59,7 +75,7 @@ class ApiClient {
     };
   }
 
-  request (method, endpoint, body = null) {
+  request(method, endpoint, body = null) {
     console.log(`Making ${method} request to ${endpoint}`);
     const url = `${this.baseUrl}${endpoint}`;
     return fetch(url, {
@@ -71,10 +87,11 @@ class ApiClient {
   get(endpoint) {
     return this.request('GET', endpoint);
   }
+
   post(endpoint, body) {
     return this.request('POST', endpoint, body);
   }
-  
+
   getUser(userId) {
     return this.get(`/api/users/${userId}`);
   }
@@ -82,9 +99,11 @@ class ApiClient {
   put(endpoint, body) {
     return this.request('PUT', endpoint, body);
   }
+
   putUser(userId, body) {
     return this.put(`/api/users/${userId}`, body);
   }
+
   getUsers(page = 1, perpage = 6) {
     console.log(`Fetching users - Page: ${page}, Per Page: ${perpage}`);
     return this.get(`/api/users?page=${page}&per_page=${perpage}`);
@@ -93,16 +112,18 @@ class ApiClient {
   delete(endpoint) {
     return this.request('DELETE', endpoint);
   }
-  deleteUser(userId) {
+
+  async deleteUser(userId) {
     return this.delete(`/api/users/${userId}`);
   }
+
   async createUser(body) {
     console.log('createUser called');
     return this.post('/api/users', body);
   }
 }
 
-const apiClient = new ApiClient('https://reqres.in', 'reqres-free-v1');    
+const apiClient = new ApiClient('https://reqres.in', 'reqres-free-v1');
 async function getUsers() {
   try {
     const users = await apiClient.getUsers();
@@ -130,9 +151,11 @@ const refreshTable = async () => {
   tbody.innerHTML = '';
   await getUsers();
   brainiacList.forEach(brainiac => {
+    if (!brainiac.deleted) { // Only add non-deleted brainiacs
       const row = brainiac.getRowHTML();
       tbody.appendChild(row);
-    });
+    }
+  });
 };
 
 const createNewUser = (async (e) => {
@@ -146,7 +169,7 @@ const createNewUser = (async (e) => {
     const first_name = document.getElementById('firstName').value;
     const last_name = document.getElementById('lastName').value;
     const email = document.getElementById('email').value;
-    
+
     const response = await apiClient.createUser({
       first_name: first_name,
       last_name: last_name,
@@ -178,20 +201,48 @@ const createNewUser = (async (e) => {
   }
 });
 
-document.addEventListener('DOMContentLoaded', () => {  
-    const burger = document.querySelector('.burger');
-    const topbar = document.querySelector('.topbar');
+async function deleteUserById(user_id, modalDel) {
+  const response = await apiClient.deleteUser(user_id);
+  if (!response.ok) {
+    console.error('Failed to delete user', response.status);
+    alert('Error deleting user. Please try again.');
+    return;
+  }
 
-    if (burger && topbar) {
-      burger.addEventListener('click', () => {
-        topbar.classList.toggle('is-open');
-      });
-    }
-    refreshTable();
-    const form = document.getElementById('addBrainiacForm');
-    if (form) {
-      form.addEventListener('submit', createNewUser);
-    } else {
-      console.error('Form element not found - cannot attach submit event listener');
-    }
+  const brainiac = brainiacList.find(b => String(b.id) === String(user_id));
+  if (brainiac) {
+    brainiac.delete();
+  }
+
+  refreshTable();
+  const modal = bootstrap.Modal.getInstance(modalDel);
+  modal.hide();
+};
+
+
+document.addEventListener('DOMContentLoaded', () => {
+  const burger = document.querySelector('.burger');
+  const topbar = document.querySelector('.topbar');
+
+  if (burger && topbar) {
+    burger.addEventListener('click', () => {
+      topbar.classList.toggle('is-open');
+    });
+  }
+  refreshTable();
+  const form = document.getElementById('addBrainiacForm');
+  if (form) {
+    form.addEventListener('submit', createNewUser);
+  } else {
+    console.error('Form element not found - cannot attach submit event listener');
+  }
+  document.getElementById('confirmDeleteYes').addEventListener('click', async () => {
+    const modalDel = document.getElementById('deleteBrainiacModal');
+    if (!modalDel) return;
+
+    const user_id = modalDel.dataset.user_id;
+    if (!user_id) return;
+
+    deleteUserById(user_id, modalDel);
+  });
 });
