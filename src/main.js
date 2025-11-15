@@ -3,6 +3,27 @@ import * as bootstrap from 'bootstrap';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import '../scss/main.scss';
 
+function getFormModalDOM() {
+  return document.getElementById('addBrainiacModal');
+}
+
+function getFormModalInstance() {
+  const modalDOM = getFormModalDOM();
+  if (!modalDOM) return null;
+  return bootstrap.Modal.getInstance(modalDOM) || bootstrap.Modal.getOrCreateInstance(modalDOM);
+}
+
+function getDelModalDOM() {
+  return document.getElementById('deleteBrainiacModal');
+}
+
+function getDelModalInstance() {
+  const modalDOM = getDelModalDOM();
+  if (!modalDOM) return null;
+  return bootstrap.Modal.getInstance(modalDOM) || bootstrap.Modal.getOrCreateInstance(modalDOM);
+}
+
+
 class Brainiac {
   constructor(id, avatar, first_name, last_name, email) {
     this.id = id;
@@ -39,16 +60,37 @@ class Brainiac {
     const btnEdit = document.createElement('button');
     btnEdit.classList.add('btn', 'btn-sm', 'text-primary');
     btnEdit.innerHTML = '<i class="fa-solid fa-pen-to-square"></i>';
-    btnEdit.dataset.id = this.id;
+    btnEdit.addEventListener('click', (e) => {
+      const modalEdit = getFormModalDOM();
+      if (!modalEdit) return;
+
+      const modalInstance = getFormModalInstance();
+
+      const modalTitle = document.getElementById('addBrainiacModalLabel');
+      const brainiacIdInput = document.getElementById('brainiacId');
+      const firstNameInput = document.getElementById('firstName');
+      const lastNameInput = document.getElementById('lastName');
+      const emailInput = document.getElementById('email');
+
+      modalEdit.dataset.mode = 'edit';
+
+      modalTitle.textContent = `Edit brainiac [ID: ${this.id}]`;
+      brainiacIdInput.value = this.id;
+      firstNameInput.value = this.first_name;
+      lastNameInput.value = this.last_name;
+      emailInput.value = this.email;
+
+      modalInstance.show();
+    });
 
     const btnDelete = document.createElement('button');
     btnDelete.classList.add('btn', 'btn-sm', 'text-primary');
     btnDelete.innerHTML = '<i class="fa-solid fa-trash"></i>';
     btnDelete.addEventListener('click', async (e) => {
-      const modalDel = document.getElementById('deleteBrainiacModal');
+      const modalDel = getDelModalDOM();
       if (!modalDel) return;
       modalDel.dataset.user_id = this.id;
-      const modal = bootstrap.Modal.getOrCreateInstance(modalDel);
+      const modal = getDelModalInstance();
       document.getElementById('delete-message').textContent = `Are you sure you want to delete brainiac: ${this.first_name} ${this.last_name}?`;
       modal.show();
     });
@@ -70,7 +112,6 @@ class ApiClient {
   constructor(baseUrl, xApiKey) {
     this.baseUrl = baseUrl;
     this.headers = {
-      'Content-Type': 'application/json',
       'x-api-key': xApiKey
     };
   }
@@ -78,9 +119,14 @@ class ApiClient {
   request(method, endpoint, body = null) {
     console.log(`Making ${method} request to ${endpoint}`);
     const url = `${this.baseUrl}${endpoint}`;
+    const headers = method === 'POST' || method === 'PUT' ? {
+      'Content-Type': 'application/json',
+      ...this.headers
+    } : this.headers;
+
     return fetch(url, {
-      method: method,
-      headers: this.headers,
+      method,
+      headers,
       body: body ? JSON.stringify(body) : null
     });
   }
@@ -148,60 +194,92 @@ async function getUsers() {
 
 const refreshTable = async () => {
   const tbody = document.getElementById('brainiac-table-body');
-  tbody.innerHTML = '';
+
   await getUsers();
+  const fragment = document.createDocumentFragment();
   brainiacList.forEach(brainiac => {
     if (!brainiac.deleted) { // Only add non-deleted brainiacs
       const row = brainiac.getRowHTML();
-      tbody.appendChild(row);
+      fragment.appendChild(row);
     }
   });
+  tbody.innerHTML = '';
+  tbody.appendChild(fragment);
 };
 
-const createNewUser = (async (e) => {
+const handleBrainiacSubmit = async (e) => {
+  e.preventDefault();
+
+  const form = document.getElementById('addBrainiacForm');
+  if (!form) {
+    console.error('Form element not found');
+    return;
+  }
+
+  const id = document.getElementById('brainiacId').value;
+  const first_name = document.getElementById('firstName').value;
+  const last_name = document.getElementById('lastName').value;
+  const email = document.getElementById('email').value;
+  const modal = getFormModalInstance();
+  const modalDOM = getFormModalDOM();
+  if (!modal || !modalDOM) {
+    console.error('Modal instance or DOM not found');
+    return;
+  }
+  const formMode = modalDOM.dataset.mode || 'add';
   try {
-    e.preventDefault();
-    const form = document.getElementById('addBrainiacForm');
-    if (!form) {
-      console.error('Form element not found');
-      return;
+    if (formMode === 'add' || !id) {
+      const response = await apiClient.createUser({
+        first_name,
+        last_name,
+        email
+      });
+
+      if (response.status !== 201) {
+        console.error('Failed to create user', response.status);
+        alert('Error creating user. Please try again.');
+        return;
+      }
+
+      const created = await response.json();
+      const brainiac = new Brainiac(created.id, 'https://placehold.co/50x50', created.first_name, created.last_name, created.email);
+      brainiacList.push(brainiac);
+    } else {
+      const response = await apiClient.putUser(id, {
+        first_name,
+        last_name,
+        email
+      });
+
+      if (!response.ok) {
+        console.error('Failed to update user', response.status);
+        alert('Error updating user. Please try again.');
+        return;
+      }
+
+      const brainiac = brainiacList.find(b => String(b.id) === String(id));
+      if (brainiac) {
+        brainiac.first_name = first_name;
+        brainiac.last_name = last_name;
+        brainiac.email = email;
+      }
     }
-    const first_name = document.getElementById('firstName').value;
-    const last_name = document.getElementById('lastName').value;
-    const email = document.getElementById('email').value;
 
-    const response = await apiClient.createUser({
-      first_name: first_name,
-      last_name: last_name,
-      email: email
-    });
-
-    if (response.status !== 201) {
-      console.error('Failed to create user', response.status);
-      alert('Error creating user. Please try again.');
-      return;
-    }
-
-    const created = await response.json();
-    const brainiac = new Brainiac(created.id, 'https://placehold.co/50x50', created.first_name, created.last_name, created.email);
-    brainiacList.push(brainiac);
-    const modalBrainiac = document.getElementById('addBrainiacModal');
-    const modal = bootstrap.Modal.getInstance(modalBrainiac);
-    refreshTable();
+    await refreshTable();
     form.reset();
-    if (!modal) {
-      console.error('Modal instance not found');
-      alert("Can't hide modal after creating user");
-      return;
-    }
     modal.hide();
   } catch (error) {
-    console.error('Error creating user:', error);
-    alert('Error creating user. Please try again.');
+    console.error('Error handling user changes:', error);
+    alert('Unexpected error. Please try again.');
   }
-});
+};
 
-async function deleteUserById(user_id, modalDel) {
+async function deleteUserModal() {
+  const modalDel = getDelModalDOM();
+  if (!modalDel) return;
+
+  const user_id = modalDel.dataset.user_id;
+  if (!user_id) return;
   const response = await apiClient.deleteUser(user_id);
   if (!response.ok) {
     console.error('Failed to delete user', response.status);
@@ -215,7 +293,7 @@ async function deleteUserById(user_id, modalDel) {
   }
 
   refreshTable();
-  const modal = bootstrap.Modal.getInstance(modalDel);
+  const modal = getDelModalInstance();
   modal.hide();
 };
 
@@ -230,19 +308,27 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   refreshTable();
+  document.getElementById('confirmDeleteYes').addEventListener('click', async () => {
+    deleteUserModal();
+  });
   const form = document.getElementById('addBrainiacForm');
+  const modalTitle = document.getElementById('addBrainiacModalLabel');
+  const brainiacIdInput = document.getElementById('brainiacId');
+
+  const addBtn = document.getElementById('addBrainiacButton');
+  if (addBtn) {
+    addBtn.addEventListener('click', () => {
+      const modalEdit = getFormModalDOM();
+      modalEdit.dataset.mode = 'add';
+      modalTitle.textContent = 'Add new brainiac';
+      brainiacIdInput.value = '';
+      form.reset();
+    });
+  }
+
   if (form) {
-    form.addEventListener('submit', createNewUser);
+    form.addEventListener('submit', handleBrainiacSubmit);
   } else {
     console.error('Form element not found - cannot attach submit event listener');
   }
-  document.getElementById('confirmDeleteYes').addEventListener('click', async () => {
-    const modalDel = document.getElementById('deleteBrainiacModal');
-    if (!modalDel) return;
-
-    const user_id = modalDel.dataset.user_id;
-    if (!user_id) return;
-
-    deleteUserById(user_id, modalDel);
-  });
 });
