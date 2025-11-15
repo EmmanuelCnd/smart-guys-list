@@ -7,8 +7,8 @@
     <link rel="icon" type="image/x-icon" href="./img/favicon.ico">
 </head>
 <body>
-    <header class="topbar">
-        <div class="container d-flex justify-content-between align-items-center">
+    <header class="topbar bg-primary text-white">
+        <div class="container d-flex justify-content-between align-items-center mt-0">
             <div class="logo d-flex align-items-center">
                 <img src="./img/logo.png" alt="Logo" class="logo-img me-2">
                 <span class="logo-text">Brainiacs</span>
@@ -16,7 +16,7 @@
             <i class="burger fa-solid fa-bars d-md-none" aria-label="Toggle navigation"></i>
             <nav class="nav">
                     <a class="nav-link inactive" href="#">Home</a>
-                    <a class="nav-link active" href="#">List of smart guys</a>
+                    <a class="nav-link active" href="./index.html">List of smart guys</a>
                     <a class="nav-link inactive" href="#">Help</a>
             </nav>                
         </div>
@@ -29,7 +29,8 @@
             </div>
             <button class="btn btn-primary btn-sm"
                 data-bs-toggle="modal"
-                data-bs-target="#addBrainiacModal">
+                data-bs-target="#addBrainiacModal"
+                id="addBrainiacButton">
                 <i class="fa-solid fa-plus me-1"></i> Add brainiac
             </button>
         </div>
@@ -45,40 +46,8 @@
                         <th class="action"></th><!-- For buttons -->
                     </tr>
                 </thead>
-                <tbody">
+                <tbody id="brainiac-table-body">
                     <!-- Rows will be dynamically added here -->
-                     <tr>
-                        <td>1</td>
-                        <td class="text-center"><img src="https://picsum.photos/seed/picsum/30/30" alt="User Photo" class="user-photo"></td>
-                        <td>Grzegorz</td>
-                        <td>Brzęszczyszczykiewicz</td>
-                        <td>test.test@test.test</td>
-                        <td class="action text-end"><i class="fa-solid fa-pen-to-square"></i><i class="fa-solid fa-trash"></i></td>
-                    </tr>
-                    <tr>
-                        <td>2</td>
-                        <td class="text-center"><img src="https://picsum.photos/30/30?grayscale" alt="User Photo" class="user-photo"></td>
-                        <td>Grzegorz</td>
-                        <td>Brzęszczyszczykiewicz</td>
-                        <td>test.test@test.test</td>
-                        <td class="action text-end"><i class="fa-solid fa-pen-to-square"></i><i class="fa-solid fa-trash"></i></td>
-                    </tr>
-                    <tr>
-                        <td>3</td>
-                        <td class="text-center"><img src="https://picsum.photos/seed/picsum/30/30" alt="User Photo" class="user-photo"></td>
-                        <td>Grzegorz</td>
-                        <td>Brzęszczyszczykiewicz</td>
-                        <td>test.test@test.test</td>
-                        <td class="action text-end"><i class="fa-solid fa-pen-to-square"></i><i class="fa-solid fa-trash"></i></td>
-                    </tr>
-                    <tr>
-                        <td>4</td>
-                        <td class="text-center"><img src="https://picsum.photos/seed/picsum/30/30" alt="User Photo" class="user-photo"></td>
-                        <td>Grzegorz</td>
-                        <td>Brzęszczyszczykiewicz</td>
-                        <td>test.test@test.test</td>
-                        <td class="action text-end"><i class="fa-solid fa-pen-to-square"></i><i class="fa-solid fa-trash"></i></td>
-                    </tr>
                 </tbody>
             </table>
         </div>
@@ -94,6 +63,8 @@
 
                 <div class="modal-body">
                     <form id="addBrainiacForm">
+                        <input type="hidden" id="brainiacId">
+
                         <div class="row">
                             <div class="col-6">
                                 <label for="firstName" class="form-label">First name <span class="required">*</span></label>
@@ -114,6 +85,23 @@
                         </div>
                         
                     </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="deleteBrainiacModal" aria-labelledby="deleteBrainiacModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteBrainiacModalLabel">Delete brainiac</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="delete-message">Are you sure you want to delete this brainiac?</p>
+                </div>
+                <div class="modal-footer text-end">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+                    <button class="btn btn-primary" id="confirmDeleteYes">Yes</button>
                 </div>
             </div>
         </div>
