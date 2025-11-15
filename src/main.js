@@ -311,13 +311,13 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('confirmDeleteYes').addEventListener('click', async () => {
     deleteUserModal();
   });
-  const form = document.getElementById('addBrainiacForm');
-  const modalTitle = document.getElementById('addBrainiacModalLabel');
-  const brainiacIdInput = document.getElementById('brainiacId');
 
+  const form = document.getElementById('addBrainiacForm');
   const addBtn = document.getElementById('addBrainiacButton');
   if (addBtn) {
     addBtn.addEventListener('click', () => {
+      const modalTitle = document.getElementById('addBrainiacModalLabel');
+      const brainiacIdInput = document.getElementById('brainiacId');
       const modalEdit = getFormModalDOM();
       modalEdit.dataset.mode = 'add';
       modalTitle.textContent = 'Add new brainiac';
