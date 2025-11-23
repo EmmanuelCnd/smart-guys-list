@@ -2,6 +2,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import * as bootstrap from 'bootstrap';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import '../scss/main.scss';
+import { BehaviorSubject, fromEvent } from 'rxjs';
 
 function getFormModalDOM() {
   return document.getElementById('addBrainiacModal');
@@ -106,7 +107,8 @@ class Brainiac {
     return row;
   }
 }
-const brainiacList = [];
+
+const brainiacs$ = new BehaviorSubject([]);
 
 class ApiClient {
   constructor(baseUrl, xApiKey) {
@@ -178,34 +180,25 @@ async function getUsers() {
       return [];
     }
     const responseJson = await users.json();
+    const current = brainiacs$.getValue();
+    const updated = [...current];
+
     responseJson.data.forEach(user => {
-      const brainiac = new Brainiac(user.id, user.avatar, user.first_name, user.last_name, user.email);
-      if (brainiacList.find(b => b.id === brainiac.id)) {
+      if (updated.find(b => b.id === user.id)) {
         return; // Skip duplicates
       }
-      brainiacList.push(brainiac);
-    })
-    return brainiacList;
+      updated.push(
+        new Brainiac(user.id, user.avatar, user.first_name, user.last_name, user.email)
+      );
+    });
+
+    brainiacs$.next(updated);
+    return updated;
   } catch (error) {
     console.error('Error fetching users:', error);
     return [];
   }
 }
-
-const refreshTable = async () => {
-  const tbody = document.getElementById('brainiac-table-body');
-
-  await getUsers();
-  const fragment = document.createDocumentFragment();
-  brainiacList.forEach(brainiac => {
-    if (!brainiac.deleted) { // Only add non-deleted brainiacs
-      const row = brainiac.getRowHTML();
-      fragment.appendChild(row);
-    }
-  });
-  tbody.innerHTML = '';
-  tbody.appendChild(fragment);
-};
 
 const handleBrainiacSubmit = async (e) => {
   e.preventDefault();
@@ -243,7 +236,10 @@ const handleBrainiacSubmit = async (e) => {
 
       const created = await response.json();
       const brainiac = new Brainiac(created.id, 'https://placehold.co/50x50', created.first_name, created.last_name, created.email);
-      brainiacList.push(brainiac);
+      const current = brainiacs$.getValue();
+      const updated = [...current, brainiac];
+      brainiacs$.next(updated);
+
     } else {
       const response = await apiClient.putUser(id, {
         first_name,
@@ -257,15 +253,18 @@ const handleBrainiacSubmit = async (e) => {
         return;
       }
 
-      const brainiac = brainiacList.find(b => String(b.id) === String(id));
-      if (brainiac) {
-        brainiac.first_name = first_name;
-        brainiac.last_name = last_name;
-        brainiac.email = email;
-      }
-    }
+      const current = brainiacs$.getValue();
+      const updated = current.map(b => {
+        if (String(b.id) === String(id)) {
+          b.first_name = first_name;
+          b.last_name = last_name;
+          b.email = email;
+        }
+        return b;
+      });
+      brainiacs$.next([...updated]);
 
-    await refreshTable();
+    }
     form.reset();
     modal.hide();
   } catch (error) {
@@ -287,35 +286,59 @@ async function deleteUserModal() {
     return;
   }
 
-  const brainiac = brainiacList.find(b => String(b.id) === String(user_id));
-  if (brainiac) {
-    brainiac.delete();
-  }
+  const current = brainiacs$.getValue();
+  const updated = current.map(b => {
+    if (String(b.id) === String(user_id)) {
+      b.delete();
+    }
+    return b;
+  });
+  brainiacs$.next([...updated]);
 
-  refreshTable();
   const modal = getDelModalInstance();
   modal.hide();
 };
 
+function refreshTable(brainiacs) {
+  const tbody = document.getElementById('brainiac-table-body');
+  if (!tbody) return;
 
-document.addEventListener('DOMContentLoaded', () => {
+  const fragment = document.createDocumentFragment();
+
+  brainiacs.forEach((brainiac) => {
+    if (!brainiac.deleted) {
+      const row = brainiac.getRowHTML();
+      fragment.appendChild(row);
+    }
+  });
+
+  tbody.innerHTML = '';
+  tbody.appendChild(fragment);
+}
+
+fromEvent(document, 'DOMContentLoaded').subscribe(async () => {
   const burger = document.querySelector('.burger');
   const topbar = document.querySelector('.topbar');
 
   if (burger && topbar) {
-    burger.addEventListener('click', () => {
+    fromEvent(burger, 'click').subscribe(() => {
       topbar.classList.toggle('is-open');
     });
   }
-  refreshTable();
-  document.getElementById('confirmDeleteYes').addEventListener('click', async () => {
-    deleteUserModal();
-  });
+  brainiacs$.subscribe(refreshTable);
+
+  await getUsers();
+  const confirmDeleteYes = document.getElementById('confirmDeleteYes');
+  if (confirmDeleteYes) {
+    fromEvent(confirmDeleteYes, 'click').subscribe(() => {
+      deleteUserModal();
+    });
+  }
 
   const form = document.getElementById('addBrainiacForm');
   const addBtn = document.getElementById('addBrainiacButton');
-  if (addBtn) {
-    addBtn.addEventListener('click', () => {
+  if (addBtn && form) {
+    fromEvent(addBtn, 'click').subscribe(() => {
       const modalTitle = document.getElementById('addBrainiacModalLabel');
       const brainiacIdInput = document.getElementById('brainiacId');
       const modalEdit = getFormModalDOM();
@@ -327,7 +350,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (form) {
-    form.addEventListener('submit', handleBrainiacSubmit);
+    fromEvent(form, 'submit').subscribe((event) => {
+      handleBrainiacSubmit(event);
+    });
   } else {
     console.error('Form element not found - cannot attach submit event listener');
   }
